@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BBT">
+<meta name="theme-color" content="#f6f6f3">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>BBT Tracker</title>
+<style>
+:root{--bg:#f6f6f3;--card:#fff;--text:#1c1c1e;--muted:#6b7280;--line:#e6e6e0;--accent:#0d9488;--accent-ink:#fff;--accent-soft:rgba(13,148,136,.12);--accent-mid:rgba(13,148,136,.30);--period:#dc2626;--heart:#db2777;--chip:#efefea}
+:root[data-theme=dark]{--bg:#0e1112;--card:#181c1d;--text:#f2f2f0;--muted:#9aa3a6;--line:#2a2f31;--accent:#2dd4bf;--accent-ink:#06201c;--accent-soft:rgba(45,212,191,.14);--accent-mid:rgba(45,212,191,.34);--period:#f87171;--heart:#f472b6;--chip:#232829}
+@media(prefers-color-scheme:dark){:root[data-theme=auto]{--bg:#0e1112;--card:#181c1d;--text:#f2f2f0;--muted:#9aa3a6;--line:#2a2f31;--accent:#2dd4bf;--accent-ink:#06201c;--accent-soft:rgba(45,212,191,.14);--accent-mid:rgba(45,212,191,.34);--period:#f87171;--heart:#f472b6;--chip:#232829}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:480px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 16px) 16px calc(88px + env(safe-area-inset-bottom))}
+.view{display:none}.view.on{display:block}
+h1{font-size:24px;margin:4px 0 2px;letter-spacing:-.02em}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 10px;font-weight:600}
+.sub,.muted,small{color:var(--muted)}
+small{font-size:12.5px}
+.pad{padding:12px 4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:14px 0}
+.row{display:flex;align-items:center;gap:10px}.between{justify-content:space-between}
+label.lab{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:16px 0 6px}
+input[type=number],input[type=date],textarea{width:100%;font:inherit;font-size:16px;color:var(--text);background:var(--chip);border:1px solid transparent;border-radius:12px;padding:11px 12px;outline:none}
+input:focus,textarea:focus{border-color:var(--accent)}
+input[type=date]{text-align:center;flex:1;min-width:0}
+textarea{resize:vertical}
+.check{display:flex;align-items:flex-start;gap:10px;margin:12px 0 0;font-size:15px}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent);flex:none}
+.check small{display:block}
+.seg{display:flex;gap:6px}.seg.wrap{flex-wrap:wrap}
+.seg button{flex:1;border:1px solid transparent;background:var(--chip);color:var(--text);font:inherit;font-size:14.5px;padding:9px 6px;border-radius:10px;cursor:pointer;min-width:0}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.seg.wrap button{flex:1 1 30%}
+button.icon{background:var(--chip);border:0;color:var(--text);width:40px;height:40px;border-radius:12px;font-size:22px;line-height:1;cursor:pointer;flex:none}
+button.btn{width:100%;background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:12px;font:inherit;font-weight:600;cursor:pointer;margin-top:10px}
+button.btn.ghost{background:var(--chip);color:var(--text)}
+button.btn.danger{background:transparent;color:var(--period);border:1px solid var(--period)}
+button.link{background:none;border:0;color:var(--muted);font:inherit;font-size:14px;padding:12px 0 0;cursor:pointer;text-decoration:underline}
+.saved{height:18px;font-size:13px;color:var(--accent);margin-top:8px}
+/* status card */
+.status .eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.08em;opacity:.75;font-weight:600}
+.status .title{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:4px 0 6px}
+.status p{margin:0 0 8px}
+.status ul{margin:8px 0 0;padding-left:18px;font-size:14px;opacity:.9}
+.status .nudge{font-size:13.5px;margin-top:10px;padding-top:10px;border-top:1px solid currentColor;border-color:rgba(127,127,127,.3);opacity:.85}
+.status.l-peak{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.status.l-high{background:var(--accent-mid);border-color:var(--accent)}
+.status.l-med{background:var(--accent-soft);border-color:var(--accent-mid)}
+.status.l-closed,.status.l-low,.status.l-unknown{background:var(--card)}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--chip);color:var(--muted);margin-left:6px;vertical-align:middle}
+dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px}
+dt{color:var(--muted)}dd{margin:0;text-align:right}
+/* chart */
+svg.chart{width:100%;height:auto;display:block}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg text{fill:var(--muted);font-size:10px;font-family:inherit}
+svg .line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+svg .pt{fill:var(--accent);stroke:var(--card);stroke-width:1.5}
+svg .ptd{fill:none;stroke:var(--muted);stroke-width:1.5}
+svg .cover{stroke:var(--heart);stroke-width:1.2;stroke-dasharray:5 4}
+svg .ovl{stroke:var(--text);stroke-width:1;stroke-dasharray:2 3;opacity:.6}
+svg .band{fill:var(--accent);opacity:.14}
+svg .flow{fill:var(--period)}
+svg .heart{fill:var(--heart);font-size:11px;text-anchor:middle}
+svg .mu{fill:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.cyc{padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}.cyc:first-child{border-top:0}
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .dow{text-align:center;font-size:12px;color:var(--muted);padding:4px 0}
+.cell{aspect-ratio:1/1.08;border:1px solid transparent;border-radius:10px;background:var(--chip);color:var(--text);font:inherit;padding:3px 0 2px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;cursor:pointer;position:relative}
+.cell.empty{background:none;visibility:hidden}
+.cell .n{font-size:14px}
+.cell .m{height:12px;font-size:10px;line-height:12px;display:flex;gap:3px;align-items:center}
+.cell .m i{display:inline-block;width:5px;height:5px;border-radius:50%}
+.cell .m .t{background:var(--accent)}.cell .m .f{background:var(--period)}
+.cell .m .h{color:var(--heart);font-style:normal}
+.cell.w-confirmed{background:var(--accent-mid)}
+.cell.w-pred{background:var(--accent-soft);border-color:var(--accent-mid)}
+.cell.w-proj{background:none;border:1px dashed var(--accent-mid)}
+.cell.ov{box-shadow:inset 0 0 0 2px var(--accent)}
+.cell.today .n{font-weight:800;text-decoration:underline;text-underline-offset:3px}
+/* tab bar */
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;background:none;border:0;color:var(--muted);font:inherit;font-size:11.5px;padding:9px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}
+nav button b{font-size:20px;line-height:1;font-weight:400}
+nav button.on{color:var(--accent);font-weight:600}
+#toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 14px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;max-width:90%}
+#toast.on{opacity:1}
+.about p{font-size:14px;margin:0 0 10px}
+.about ul{font-size:14px;padding-left:18px;margin:0 0 10px}
+</style>
+</head>
+<body>
+<main>
+  <!-- TODAY -->
+  <section class="view on" id="v-today">
+    <h1 id="dateLabel"></h1>
+    <div class="sub" id="cycleLabel"></div>
+
+    <div id="statusCard" class="card status"></div>
+
+    <div class="card">
+      <h2>Log</h2>
+      <div class="row">
+        <button class="icon" id="prevDay" aria-label="Previous day">‹</button>
+        <input type="date" id="dateInput">
+        <button class="icon" id="nextDay" aria-label="Next day">›</button>
+      </div>
+
+      <label class="lab">Basal temperature (<span class="unitLbl"></span>)</label>
+      <input id="temp" type="number" inputmode="decimal" step="0.01" placeholder="">
+      <label class="check"><input type="checkbox" id="dist"><span>Disturbed reading<small>Illness, alcohol, under 3 hours of unbroken sleep, or a very different wake time. Excluded from calculations.</small></span></label>
+
+      <label class="lab">Period</label>
+      <div class="seg" id="flow"></div>
+
+      <label class="lab">Cervical mucus</label>
+      <div class="seg wrap" id="mucus"></div>
+      <small>Egg-white = clear, stretchy, slippery. Watery = clear and wet. Tap again to unselect.</small>
+
+      <label class="check"><input type="checkbox" id="sex"><span>Intercourse</span></label>
+
+      <label class="lab">Notes</label>
+      <textarea id="note" rows="2"></textarea>
+      <div class="saved" id="saved"></div>
+      <button class="link" id="clearDay">Clear this day</button>
+    </div>
+
+    <div class="card" id="predCard"></div>
+  </section>
+
+  <!-- CHART -->
+  <section class="view" id="v-chart">
+    <h1>Chart</h1>
+    <div class="card" id="chartCard"></div>
+    <div class="card"><h2>Cycles</h2><div id="cycleList"></div></div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="view" id="v-cal">
+    <h1>Calendar</h1>
+    <div class="card">
+      <div class="row between" style="margin-bottom:10px">
+        <button class="icon" id="mPrev" aria-label="Previous month">‹</button>
+        <strong id="mTitle"></strong>
+        <button class="icon" id="mNext" aria-label="Next month">›</button>
+      </div>
+      <div class="cal" id="calGrid"></div>
+      <div class="legend">
+        <span><i style="background:var(--accent-mid)"></i>Fertile window (confirmed)</span>
+        <span><i style="background:var(--accent-soft);border:1px solid var(--accent-mid)"></i>Predicted</span>
+        <span><i style="border:1px dashed var(--accent-mid)"></i>Projected next cycle</span>
+        <span><i style="box-shadow:inset 0 0 0 2px var(--accent)"></i>Est. ovulation</span>
+        <span><i style="background:var(--accent);border-radius:50%"></i>Temp logged</span>
+        <span><i style="background:var(--period);border-radius:50%"></i>Period</span>
+        <span><i style="color:var(--heart);width:auto;background:none">♥</i>Intercourse</span>
+      </div>
+      <small style="display:block;margin-top:10px">Tap a day to view or edit it.</small>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="v-settings">
+    <h1>Settings</h1>
+    <div class="card">
+      <h2>Temperature unit</h2>
+      <div class="seg" id="unitSeg"></div>
+      <label class="lab">Appearance</label>
+      <div class="seg" id="themeSeg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Backup</h2>
+      <p class="muted" style="margin-top:0;font-size:14px">Your data lives only on this device, inside this app. Back it up now and then, especially before deleting the app or changing phones.</p>
+      <button class="btn" id="exportFile">Save / share backup file</button>
+      <button class="btn ghost" id="copyBackup">Copy backup to clipboard</button>
+      <label class="lab">Restore</label>
+      <textarea id="importText" rows="3" placeholder="Paste backup text here…"></textarea>
+      <button class="btn ghost" id="importPasted">Restore from pasted text</button>
+      <label class="lab" style="margin-top:14px">…or choose a backup file</label>
+      <input type="file" id="importFile" accept=".json,application/json">
+      <button class="btn danger" id="eraseAll" style="margin-top:18px">Erase all data</button>
+    </div>
+
+    <div class="card about">
+      <h2>How it works</h2>
+      <p><b>Confirming ovulation.</b> A rise in basal body temperature happens <i>after</i> ovulation, so temperature alone cannot tell you in advance that you are fertile today. The app uses the sympto-thermal “3-over-6” rule: three consecutive readings above the highest of the previous six (the coverline), with the third at least 0.2 °C (about 0.4 °F) above it, or a fourth reading above it, and the rise has to hold (a lone spike that falls back is ignored). Ovulation is estimated as the day before the first high reading. Disturbed readings are ignored.</p>
+      <p><b>Predicting this morning.</b> Each confirmed cycle teaches the app on which cycle day you tend to ovulate. The fertile window is estimated as the five days before ovulation through the day after (research on conception timing finds a roughly six-day window ending on ovulation day, with the two days before it the most fertile). With no history it falls back to a 28-day-cycle assumption, with a wide margin.</p>
+      <p><b>Same-day signals.</b> Cervical mucus is the strongest same-morning sign: egg-white or watery mucus raises the estimate regardless of the calendar. After a confirmed temperature rise, the window is marked closed for that cycle.</p>
+      <p><b>Limits.</b> Irregular cycles, PCOS, shift work, illness, some medications and travel can make any method less reliable. This app is not a medical device and not a substitute for medical advice. General guidance is to see a clinician if you have not conceived after 12 months of trying (6 months if you are 35 or older), or sooner if your cycles are very irregular or you have other concerns.</p>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button data-tab="today" class="on"><b>☀</b>Today</button>
+  <button data-tab="chart"><b>〰</b>Chart</button>
+  <button data-tab="cal"><b>▦</b>Calendar</button>
+  <button data-tab="settings"><b>⚙</b>Settings</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+// =====================================================================
+// LOGIC START  (pure functions; tested separately in Node)
+// =====================================================================
+const FLOW=['light','medium','heavy'];
+const MUC={dry:0,sticky:1,creamy:2,watery:3,eggwhite:5};
+const MUCL={dry:'dry',sticky:'sticky',creamy:'creamy',watery:'watery',eggwhite:'egg-white'};
+const pad=n=>String(n).padStart(2,'0');
+const fmt=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12)};
+const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return fmt(d)};
+const diff=(a,b)=>Math.round((parse(a)-parse(b))/864e5);
+const todayStr=()=>fmt(new Date());
+const cToF=c=>c*9/5+32, fToC=f=>(f-32)*5/9;
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+const stdev=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1))};
+const fs=s=>parse(s).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+
+// A cycle starts on a day with real flow (not spotting) whose previous day had none.
+// Starts closer than 10 days to the previous start are treated as the same period.
+function getStarts(entries){
+  const isFlow=e=>e&&FLOW.includes(e.flow);
+  const starts=[];
+  for(const d of Object.keys(entries).sort()){
+    if(isFlow(entries[d])&&!isFlow(entries[addDays(d,-1)])){
+      if(!starts.length||diff(d,starts[starts.length-1])>=10) starts.push(d);
+    }
+  }
+  return starts;
+}
+
+// 3-over-6 rule. readings = [{date,t}] valid (non-disturbed) readings in date order.
+function detect(r){
+  for(let i=6;i<=r.length-3;i++){
+    const low=r.slice(i-6,i);
+    const cover=Math.max(...low.map(x=>x.t));
+    const a=r[i],b=r[i+1],c=r[i+2],d4=r[i+3];
+    if(!(a.t>cover&&b.t>cover&&c.t>cover)) continue;
+    if(diff(c.date,a.date)>4||diff(a.date,low[0].date)>10) continue;   // readings must be reasonably consecutive
+    const ok4=d4&&d4.t>cover&&diff(d4.date,c.date)<=2;
+    // The rise must hold: if a 4th reading exists and falls back to/below the coverline, it was a spike, not a shift.
+    const ok3=c.t>=cover+0.2&&!(d4&&d4.t<=cover&&diff(d4.date,c.date)<=2);
+    if(ok3||ok4) return {first:a.date,cover,ov:addDays(a.date,-1),confirmed:(ok3?c:d4).date};
+  }
+  return null;
+}
+
+// Early, unconfirmed rise: the most recent 1 or 2 readings are above the previous six.
+function pending(r,t){
+  if(!r.length||diff(t,r[r.length-1].date)>1) return null;
+  for(const k of [2,1]){
+    const i=r.length-k; if(i<6) continue;
+    const cover=Math.max(...r.slice(i-6,i).map(x=>x.t));
+    // For a 2-day run, require a real rise (>= 0.1 °C above the coverline) so ordinary day-to-day noise cannot trigger it.
+    const real=k<2||r[r.length-1].t>=cover+0.1;
+    if(r.slice(i).every(x=>x.t>cover)&&real&&diff(r[r.length-1].date,r[i].date)<=k+1) return {k,cover};
+  }
+  return null;
+}
+
+function analyze(entries,t){
+  const starts=getStarts(entries);
+  const dates=Object.keys(entries);
+  const maxD=dates.length?dates.reduce((a,b)=>a>b?a:b):t;
+  const stopAll=maxD>t?maxD:t;
+  return starts.map((s,i)=>{
+    const next=starts[i+1]||null;
+    const end=next?addDays(next,-1):stopAll;
+    const readings=[];
+    for(let d=s;d<=end;d=addDays(d,1)){
+      const e=entries[d];
+      if(e&&typeof e.t==='number'&&!e.dist) readings.push({date:d,t:e.t});
+    }
+    return {start:s,next,len:next?diff(next,s):null,readings,det:detect(readings)};
+  });
+}
+
+function predict(cycles){
+  const complete=cycles.filter(c=>c.len);
+  const ovDays=complete.filter(c=>c.det).slice(-6).map(c=>diff(c.det.ov,c.start)+1);
+  const lens=complete.filter(c=>c.len>=18&&c.len<=45).slice(-6).map(c=>c.len);
+  const avgLen=lens.length?Math.round(mean(lens)):null;
+  if(ovDays.length){
+    const sd=ovDays.length>1?stdev(ovDays):0;
+    let margin=ovDays.length>=3?Math.max(1,Math.ceil(sd)):2;
+    margin=Math.min(4,margin);
+    return {ovDay:Math.round(mean(ovDays)),margin,source:'history',n:ovDays.length,avgLen};
+  }
+  if(avgLen) return {ovDay:Math.max(8,avgLen-14),margin:3,source:'length',n:lens.length,avgLen};
+  return {ovDay:14,margin:4,source:'default',n:0,avgLen:null};
+}
+
+function computeStatus(entries,t){
+  const cycles=analyze(entries,t);
+  const cur=cycles.filter(c=>c.start<=t).pop();
+  if(!cur) return {lvl:'unknown',title:'Let’s set your cycle day',detail:'Log the first day of your most recent period (pick Light, Medium or Heavy on that date) so cycle days can be counted. After that, the fertile window is estimated each morning.',reasons:[],nudges:[],cycles};
+  const cd=diff(t,cur.start)+1;
+  if(cd>70) return {lvl:'unknown',title:'Period start looks out of date',detail:`Your last logged period began ${cd-1} days ago. Log your most recent period start to keep predictions accurate.`,reasons:[],nudges:[],cycles,cur,cd};
+  const pred=predict(cycles);
+  const e=entries[t]||{};
+  const ovD=addDays(cur.start,pred.ovDay-1);
+  const coreS=addDays(ovD,-5), coreE=addDays(ovD,1);
+  const bandS=addDays(coreS,-pred.margin), bandE=addDays(coreE,pred.margin);
+  const nudges=[];
+  if(typeof e.t!=='number') nudges.push('Log this morning’s temperature, taken before getting up.');
+  if(!e.mucus) nudges.push('Log cervical mucus. It is the best same-morning fertility signal.');
+  const base={cycles,cur,cd,pred,coreS,coreE,bandS,bandE,ovD,nudges};
+  const src=pred.source==='history'?`your last ${pred.n} confirmed cycle${pred.n>1?'s':''}`:pred.source==='length'?'your average cycle length':'a typical 28-day cycle (no history yet)';
+
+  if(cur.det) return {...base,lvl:'closed',title:'Fertile window has likely closed',
+    detail:`Your temperature rise was confirmed on ${fs(cur.det.confirmed)}. Ovulation is estimated around ${fs(cur.det.ov)}, so the fertile window (through ${fs(addDays(cur.det.ov,1))}) is over for this cycle.`,reasons:[]};
+
+  if(FLOW.includes(e.flow)) return {...base,lvl:'low',title:'Period day',
+    detail:`Cycle day ${cd}. Fertility is lowest during bleeding. Your predicted window opens around ${fs(coreS)}.`,reasons:[]};
+
+  const reasons=[]; let score=0;
+  if(e.mucus){score+=MUC[e.mucus];reasons.push(`Cervical mucus today: ${MUCL[e.mucus]}`);}
+  const y=entries[addDays(t,-1)];
+  if(y&&y.mucus==='eggwhite'&&e.mucus!=='eggwhite'){score+=1;reasons.push('Egg-white mucus yesterday. The peak day may have just passed, and fertility lasts about a day beyond it');}
+  const inCore=t>=coreS&&t<=coreE, inBand=t>=bandS&&t<=bandE;
+  if(inCore){score+=2;reasons.push(`Cycle day ${cd} is inside the window predicted from ${src} (${fs(coreS)} to ${fs(coreE)})`);}
+  else if(inBand){score+=1;reasons.push(`Cycle day ${cd} is near the predicted window (${fs(coreS)} to ${fs(coreE)}, give or take ${pred.margin} days)`);}
+  const pend=pending(cur.readings,t);
+  if(pend){
+    // 1 high reading: ovulation was probably yesterday, so today is still inside the window (note only).
+    // 2 high readings: ovulation was probably 2 days ago, so the window is ending (lower the estimate).
+    if(pend.k>=2) score=Math.max(0,score-2);
+    reasons.push(pend.k>=2?'Temperature has been above the coverline for 2 days. Ovulation likely happened already; it is confirmed after 3 high readings'
+      :'Today’s temperature is above the coverline. Ovulation may have been yesterday, so fertility is about to fade (confirmed after 3 high readings)');
+  }
+  if(!inBand&&t>bandE&&!pend) reasons.push('Past the expected window with no confirmed rise. Ovulation may be later than usual, so keep watching mucus and temperature');
+
+  let lvl,title,detail;
+  if(score>=5){lvl='peak';title='Peak fertility';detail='Today is among your most fertile days. Intercourse every day or every other day through the window gives the best odds.';}
+  else if(score>=3){lvl='high';title='High fertility';detail='You are very likely in your fertile window. Aim for intercourse today or tomorrow, then every 1 to 2 days while the signs continue.';}
+  else if(score===2){lvl='med';title='Likely fertile';detail='You are probably in your fertile window. Logging mucus will sharpen this estimate.';}
+  else {lvl='low';title='Low fertility';
+    detail=t<bandS?`Your predicted window opens around ${fs(coreS)}, in ${diff(coreS,t)} day${diff(coreS,t)>1?'s':''}.`:
+           pend?'Temperatures are starting to rise, which usually follows ovulation.':'Signs point to low fertility this morning.';}
+  return {...base,lvl,title,detail,reasons};
+}
+
+// Which calendar days are in a fertile window? kind: confirmed | pred | proj
+function windowKind(ds,cycles,pred,t){
+  let cyc=null;
+  for(let i=cycles.length-1;i>=0;i--) if(ds>=cycles[i].start){cyc=cycles[i];break;}
+  const last=cycles[cycles.length-1];
+  if(cyc){
+    if(cyc.det){
+      const o=cyc.det.ov;
+      if(ds>=addDays(o,-5)&&ds<=addDays(o,1)) return {kind:'confirmed',ov:ds===o};
+    }
+    if(cyc===last){
+      const o=addDays(cyc.start,pred.ovDay-1);
+      if(ds>=addDays(o,-5)&&ds<=addDays(o,1)) return {kind:'pred',ov:ds===o};
+    }
+  }
+  if(last&&pred.avgLen&&ds>t){
+    for(let k=1;k<=2;k++){
+      const ns=addDays(last.start,k*pred.avgLen);
+      const o=addDays(ns,pred.ovDay-1);
+      if(ds>=addDays(o,-5)&&ds<=addDays(o,1)) return {kind:'proj',ov:false};
+    }
+  }
+  return {kind:null,ov:false};
+}
+// =====================================================================
+// LOGIC END
+// =====================================================================
+
+// ---------- storage ----------
+const KEY='bbt.v1';
+let S={v:1,entries:{},settings:{unit:'F',theme:'light'}};
+let storageOK=true;
+try{
+  const raw=localStorage.getItem(KEY);
+  if(raw){const p=JSON.parse(raw);S={v:1,entries:p.entries||{},settings:{unit:'F',theme:'light',...(p.settings||{})}};}
+}catch(e){storageOK=false;}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){storageOK=false;toast('Could not save to this browser');}}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
+
+// ---------- UI helpers ----------
+const $=(s,r=document)=>r.querySelector(s);
+let toastT;
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200);}
+const unit=()=>S.settings.unit;
+const conv=c=>unit()==='F'?cToF(c):c;
+let editDate=todayStr(), lastToday=todayStr(), tab='today';
+
+function applyTheme(){
+  document.documentElement.dataset.theme=S.settings.theme;
+  const dark=S.settings.theme==='dark'||(S.settings.theme==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);
+  $('meta[name=theme-color]').content=dark?'#0e1112':'#f6f6f3';
+}
+
+function buildSeg(id,opts,toggle,onChange){
+  const el=$('#'+id);
+  el.innerHTML=opts.map(([v,l])=>`<button type="button" data-v="${v}">${l}</button>`).join('');
+  el.addEventListener('click',ev=>{
+    const b=ev.target.closest('button'); if(!b) return;
+    el.dataset.val=(toggle&&el.dataset.val===b.dataset.v)?'':b.dataset.v;
+    syncSeg(el); onChange(el.dataset.val);
+  });
+}
+function syncSeg(el){[...el.children].forEach(b=>b.classList.toggle('on',b.dataset.v===el.dataset.val));}
+function setSeg(id,v){const el=$('#'+id);el.dataset.val=v||'';syncSeg(el);}
+
+// ---------- Today ----------
+function loadForm(){
+  const e=S.entries[editDate]||{};
+  $('#dateInput').value=editDate;
+  $('#dateInput').max=todayStr();
+  $('#temp').value=typeof e.t==='number'?(unit()==='F'?cToF(e.t).toFixed(2):e.t.toFixed(2)):'';
+  $('#temp').placeholder=unit()==='F'?'e.g. 97.52':'e.g. 36.40';
+  $('#dist').checked=!!e.dist;
+  setSeg('flow',e.flow||'none');
+  setSeg('mucus',e.mucus||'');
+  $('#sex').checked=!!e.sex;
+  $('#note').value=e.note||'';
+  $('#saved').textContent='';
+  document.querySelectorAll('.unitLbl').forEach(x=>x.textContent='°'+unit());
+  renderHeader();
+}
+
+let saveT;
+function saveDay(){
+  const raw=$('#temp').value.trim();
+  let t=null;
+  if(raw!==''){
+    const v=parseFloat(raw.replace(',','.'));
+    const c=unit()==='F'?fToC(v):v;
+    if(isNaN(v)||c<34||c>39){$('#saved').textContent='';toast('That temperature looks out of range');return;}
+    t=Math.round(c*1000)/1000;
+  }
+  const e={};
+  if(t!==null){e.t=t;if($('#dist').checked)e.dist=true;}
+  const flow=$('#flow').dataset.val; if(flow&&flow!=='none')e.flow=flow;
+  const mu=$('#mucus').dataset.val; if(mu)e.mucus=mu;
+  if($('#sex').checked)e.sex=true;
+  const note=$('#note').value.trim(); if(note)e.note=note;
+  if(Object.keys(e).length) S.entries[editDate]=e; else delete S.entries[editDate];
+  persist();
+  $('#saved').textContent='Saved ✓';
+  clearTimeout(saveT);saveT=setTimeout(()=>$('#saved').textContent='',1500);
+  renderHeader();renderStatus();renderPred();
+}
+
+function renderHeader(){
+  const d=parse(editDate);
+  $('#dateLabel').textContent=editDate===todayStr()?'Today':d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  const cycles=analyze(S.entries,todayStr());
+  const c=cycles.filter(c=>c.start<=editDate).pop();
+  const cd=c?diff(editDate,c.start)+1:null;
+  $('#cycleLabel').textContent=(editDate===todayStr()?d.toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'})+' · ':'')+(cd&&cd<=70?`Cycle day ${cd}`:'Cycle day unknown');
+}
+
+function renderStatus(){
+  const st=computeStatus(S.entries,todayStr());
+  const el=$('#statusCard');
+  el.className='card status l-'+st.lvl;
+  el.innerHTML=`<div class="eyebrow">This morning${st.cd?` · Cycle day ${st.cd}`:''}</div>
+    <div class="title">${st.title}</div><p>${st.detail}</p>
+    ${st.reasons&&st.reasons.length?`<ul>${st.reasons.map(r=>`<li>${r}</li>`).join('')}</ul>`:''}
+    ${st.nudges&&st.nudges.length&&st.lvl!=='unknown'?`<div class="nudge">${st.nudges.join('<br>')}</div>`:''}`;
+}
+
+function renderPred(){
+  const st=computeStatus(S.entries,todayStr());
+  const el=$('#predCard');
+  if(!st.cur||!st.pred){el.innerHTML='<h2>Prediction</h2><p class="muted" style="margin:0">Log a period start to see predictions.</p>';return;}
+  const p=st.pred,c=st.cur;
+  const basis=p.source==='history'?`${p.n} confirmed cycle${p.n>1?'s':''} (±${p.margin} days)`:p.source==='length'?`average cycle length (${p.avgLen} days)`:'28-day default. Confidence grows as you log';
+  let rows='';
+  if(c.det){
+    rows+=`<dt>Est. ovulation</dt><dd>${fs(c.det.ov)} (day ${diff(c.det.ov,c.start)+1})</dd>`;
+    rows+=`<dt>Coverline</dt><dd>${conv(c.det.cover).toFixed(2)} °${unit()}</dd>`;
+  }else{
+    rows+=`<dt>Expected ovulation</dt><dd>~${fs(st.ovD)} (day ${p.ovDay})</dd>`;
+    rows+=`<dt>Likely window</dt><dd>${fs(st.coreS)} – ${fs(st.coreE)}</dd>`;
+  }
+  const nextStart=p.avgLen?addDays(c.start,p.avgLen):null;
+  if(nextStart&&nextStart>todayStr()) rows+=`<dt>Next period</dt><dd>~${fs(nextStart)}</dd>`;
+  rows+=`<dt>Based on</dt><dd>${basis}</dd>`;
+  el.innerHTML=`<h2>This cycle</h2><dl>${rows}</dl>`;
+}
+
+// ---------- Chart ----------
+let chartIdx=null;
+function renderChart(){
+  const t=todayStr(), cycles=analyze(S.entries,t), card=$('#chartCard'), list=$('#cycleList');
+  if(!cycles.length){card.innerHTML='<p class="muted" style="margin:0">Log the first day of a period to start charting cycles.</p>';list.innerHTML='<p class="muted" style="margin:0">No cycles yet.</p>';return;}
+  if(chartIdx===null||chartIdx>=cycles.length) chartIdx=cycles.length-1;
+  if(chartIdx<0) chartIdx=0;
+  const c=cycles[chartIdx], isCur=chartIdx===cycles.length-1, pred=predict(cycles);
+  const N=Math.min(60,c.len?c.len:Math.max(28,diff(t,c.start)+4,pred.ovDay+4));
+  const pts=[],dis=[];
+  for(let i=1;i<=N;i++){const e=S.entries[addDays(c.start,i-1)];if(e&&typeof e.t==='number')(e.dist?dis:pts).push({i,v:conv(e.t)});}
+  const all=[...pts,...dis].map(p=>p.v);
+  let lo=all.length?Math.min(...all):conv(36.2), hi=all.length?Math.max(...all):conv(37.0);
+  if(c.det){lo=Math.min(lo,conv(c.det.cover));hi=Math.max(hi,conv(c.det.cover));}
+  const pd=unit()==='F'?0.25:0.12; lo-=pd;hi+=pd;
+  const step=[0.1,0.2,0.25,0.5,1,2].find(s=>(hi-lo)/s<=6)||2;
+  const y0=Math.floor(lo/step+1e-9)*step, y1=Math.ceil(hi/step-1e-9)*step;
+  const W=360,H=250,L=42,R=10,T=20,B=40, cell=(W-L-R)/N;
+  const X=i=>L+(i-0.5)*cell, Y=v=>T+(1-(v-y0)/(y1-y0))*(H-T-B);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Temperature chart">`;
+  const dec=step>=1?0:step===0.25?2:1;
+  for(let v=y0;v<=y1+1e-9;v+=step) s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${L-5}" y="${Y(v)+3}" text-anchor="end">${v.toFixed(dec)}</text>`;
+  let wS=null,wE=null;
+  if(c.det){wS=diff(addDays(c.det.ov,-5),c.start)+1;wE=diff(addDays(c.det.ov,1),c.start)+1;}
+  else if(isCur){wS=pred.ovDay-5;wE=pred.ovDay+1;}
+  if(wS!==null){const a=Math.max(1,wS),b=Math.min(N,wE);if(b>=a)s+=`<rect class="band" x="${L+(a-1)*cell}" y="${T}" width="${(b-a+1)*cell}" height="${H-T-B}" rx="4"/>`;}
+  if(c.det){
+    s+=`<line class="cover" x1="${L}" x2="${W-R}" y1="${Y(conv(c.det.cover))}" y2="${Y(conv(c.det.cover))}"/>`;
+    const oi=diff(c.det.ov,c.start)+1;
+    if(oi>=1&&oi<=N) s+=`<line class="ovl" x1="${X(oi)}" x2="${X(oi)}" y1="${T}" y2="${H-B}"/><text x="${X(oi)}" y="${T-8}" text-anchor="middle">ov</text>`;
+  }
+  if(pts.length>1) s+=`<path class="line" d="${pts.map((p,k)=>(k?'L':'M')+X(p.i).toFixed(1)+' '+Y(p.v).toFixed(1)).join(' ')}"/>`;
+  pts.forEach(p=>s+=`<circle class="pt" cx="${X(p.i)}" cy="${Y(p.v)}" r="3.5"/>`);
+  dis.forEach(p=>s+=`<circle class="ptd" cx="${X(p.i)}" cy="${Y(p.v)}" r="3.5"/>`);
+  const rad={dry:1.5,sticky:2.5,creamy:3.5,watery:4.5,eggwhite:5.5}, op={dry:.25,sticky:.35,creamy:.5,watery:.8,eggwhite:1};
+  for(let i=1;i<=N;i++){
+    const e=S.entries[addDays(c.start,i-1)]; if(!e) continue;
+    if(e.flow) s+=`<rect class="flow" x="${X(i)-cell/2+1}" y="${H-B+4}" width="${cell-2}" height="4" rx="1" opacity="${e.flow==='spotting'?.4:1}"/>`;
+    if(e.mucus) s+=`<circle class="mu" cx="${X(i)}" cy="${H-B+19}" r="${rad[e.mucus]}" opacity="${op[e.mucus]}"/>`;
+    if(e.sex) s+=`<text class="heart" x="${X(i)}" y="${T-6}">♥</text>`;
+  }
+  for(let i=1;i<=N;i++) if(i===1||i%5===0) s+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle">${i}</text>`;
+  s+='</svg>';
+  const last=c.next?addDays(c.next,-1):null;
+  card.innerHTML=`<div class="row between" style="margin-bottom:10px">
+      <button class="icon" id="cPrev" ${chartIdx===0?'disabled style="opacity:.3"':''}>‹</button>
+      <div style="text-align:center"><strong>Cycle starting ${fs(c.start)}</strong><br><small>${c.len?c.len+' days':'in progress'}</small></div>
+      <button class="icon" id="cNext" ${isCur?'disabled style="opacity:.3"':''}>›</button></div>
+    ${s}
+    <div class="legend">
+      <span><i style="background:var(--accent)"></i>Temp (${'°'+unit()})</span>
+      <span><i style="border:1.5px solid var(--muted);border-radius:50%"></i>Disturbed</span>
+      <span><i style="border-top:2px dashed var(--heart);height:0;border-radius:0;vertical-align:3px"></i>Coverline</span>
+      <span><i style="background:var(--accent);opacity:.25"></i>${c.det?'Fertile window':'Predicted window'}</span>
+      <span><i style="background:var(--period)"></i>Period</span>
+      <span>● Mucus (bigger = wetter)</span>
+      <span style="color:var(--heart)">♥ Intercourse</span>
+    </div>`;
+  // cycle list
+  list.innerHTML=cycles.slice().reverse().map(cy=>{
+    const range=`${fs(cy.start)} → ${cy.next?fs(addDays(cy.next,-1)):'now'}`;
+    let info;
+    if(cy.det){const od=diff(cy.det.ov,cy.start)+1;info=`Ovulation ≈ day ${od} (${fs(cy.det.ov)})`+(cy.len?` · luteal ≈ ${cy.len-od} days`:'');}
+    else info=cy.next?'No temperature rise detected':'Rise not yet confirmed';
+    return `<div class="cyc"><b>${range}</b>${cy.len?`<span class="pill">${cy.len} days</span>`:''}<br><small>${info}</small></div>`;
+  }).join('');
+}
+
+// ---------- Calendar ----------
+let calY=new Date().getFullYear(), calM=new Date().getMonth();
+function renderCal(){
+  const t=todayStr(), cycles=analyze(S.entries,t), pred=predict(cycles);
+  $('#mTitle').textContent=new Date(calY,calM,1).toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  let h=['S','M','T','W','T','F','S'].map(d=>`<div class="dow">${d}</div>`).join('');
+  const dow=new Date(calY,calM,1).getDay(), dim=new Date(calY,calM+1,0).getDate();
+  for(let i=0;i<dow;i++) h+='<div class="cell empty"></div>';
+  for(let d=1;d<=dim;d++){
+    const ds=`${calY}-${pad(calM+1)}-${pad(d)}`, e=S.entries[ds]||{}, w=windowKind(ds,cycles,pred,t);
+    const cls=['cell',w.kind?'w-'+w.kind:'',w.ov?'ov':'',ds===t?'today':''].join(' ');
+    h+=`<button class="${cls}" data-d="${ds}"><span class="n">${d}</span><span class="m">${typeof e.t==='number'?'<i class="t"></i>':''}${e.flow?`<i class="f" style="${e.flow==='spotting'?'opacity:.4':''}"></i>`:''}${e.sex?'<i class="h">♥</i>':''}</span></button>`;
+  }
+  $('#calGrid').innerHTML=h;
+}
+
+// ---------- Settings ----------
+function backupText(){return JSON.stringify(S,null,2);}
+async function exportFile(){
+  const blob=new Blob([backupText()],{type:'application/json'});
+  const file=new File([blob],`bbt-backup-${todayStr()}.json`,{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'BBT backup'});return;}catch(e){if(e.name==='AbortError')return;}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file.name;document.body.appendChild(a);a.click();a.remove();
+}
+function importText(text){
+  let p;try{p=JSON.parse(text);}catch(e){toast('That does not look like a valid backup');return;}
+  if(!p||typeof p.entries!=='object'){toast('No data found in that backup');return;}
+  const n=Object.keys(p.entries).length;
+  if(!confirm(`Replace everything on this device with ${n} logged day${n===1?'':'s'} from the backup?`))return;
+  S={v:1,entries:p.entries,settings:{...S.settings,...(p.settings||{})}};
+  persist();applyTheme();setSeg('unitSeg',unit());setSeg('themeSeg',S.settings.theme);loadForm();renderAll();toast('Backup restored');
+}
+
+// ---------- wiring ----------
+function renderAll(){renderStatus();renderPred();renderHeader();if(tab==='chart')renderChart();if(tab==='cal')renderCal();}
+function show(name){
+  tab=name;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+name));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+  if(name==='today'){loadForm();renderStatus();renderPred();}
+  if(name==='chart')renderChart();
+  if(name==='cal')renderCal();
+  window.scrollTo(0,0);
+}
+
+buildSeg('flow',[['none','None'],['spotting','Spotting'],['light','Light'],['medium','Medium'],['heavy','Heavy']],false,saveDay);
+buildSeg('mucus',[['dry','Dry'],['sticky','Sticky'],['creamy','Creamy'],['watery','Watery'],['eggwhite','Egg-white']],true,saveDay);
+buildSeg('unitSeg',[['F','Fahrenheit °F'],['C','Celsius °C']],false,v=>{S.settings.unit=v;persist();loadForm();renderAll();});
+buildSeg('themeSeg',[['light','Light'],['dark','Dark'],['auto','Auto']],false,v=>{S.settings.theme=v;persist();applyTheme();});
+setSeg('unitSeg',unit());setSeg('themeSeg',S.settings.theme);
+
+$('#temp').addEventListener('change',saveDay);
+$('#temp').addEventListener('blur',saveDay);
+['#dist','#sex'].forEach(s=>$(s).addEventListener('change',saveDay));
+$('#note').addEventListener('change',saveDay);
+$('#dateInput').addEventListener('change',e=>{if(e.target.value){editDate=e.target.value>todayStr()?todayStr():e.target.value;loadForm();}});
+$('#prevDay').addEventListener('click',()=>{editDate=addDays(editDate,-1);loadForm();});
+$('#nextDay').addEventListener('click',()=>{if(editDate<todayStr()){editDate=addDays(editDate,1);loadForm();}});
+$('#clearDay').addEventListener('click',()=>{if(S.entries[editDate]&&confirm('Clear everything logged for this day?')){delete S.entries[editDate];persist();loadForm();renderStatus();renderPred();}});
+document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
+$('#chartCard').addEventListener('click',e=>{
+  if(e.target.closest('#cPrev')&&chartIdx>0){chartIdx--;renderChart();}
+  if(e.target.closest('#cNext')){chartIdx++;renderChart();}
+});
+$('#mPrev').addEventListener('click',()=>{calM--;if(calM<0){calM=11;calY--;}renderCal();});
+$('#mNext').addEventListener('click',()=>{calM++;if(calM>11){calM=0;calY++;}renderCal();});
+$('#calGrid').addEventListener('click',e=>{const b=e.target.closest('.cell[data-d]');if(!b)return;editDate=b.dataset.d>todayStr()?todayStr():b.dataset.d;show('today');});
+$('#exportFile').addEventListener('click',exportFile);
+$('#copyBackup').addEventListener('click',async()=>{try{await navigator.clipboard.writeText(backupText());toast('Backup copied');}catch(e){$('#importText').value=backupText();toast('Select and copy the text in the box');}});
+$('#importPasted').addEventListener('click',()=>importText($('#importText').value));
+$('#importFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;f.text().then(importText);e.target.value='';});
+$('#eraseAll').addEventListener('click',()=>{
+  if(confirm('Erase ALL logged data on this device? This cannot be undone.')&&confirm('Really erase everything?')){S.entries={};persist();editDate=todayStr();loadForm();renderAll();toast('All data erased');}
+});
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&todayStr()!==lastToday){
+    if(editDate===lastToday)editDate=todayStr();
+    lastToday=todayStr();calY=new Date().getFullYear();calM=new Date().getMonth();loadForm();renderAll();
+  }
+});
+
+applyTheme();
+loadForm();renderAll();
+if(!storageOK)toast('Browser storage unavailable. Data will not be saved');
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
